@@ -4,7 +4,7 @@
   "description": "",
   "main": "bowling.spec.js",
   "scripts": {
-    "test": "./node_modules/jest/bin/jest.js"
+    "test": "stryker run"
   },
   "author": "",
   "license": "ISC",

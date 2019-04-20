@@ -1,44 +1,37 @@
-module.exports = (rolls) => {
-  const isStryke = ([firstRoll] = rolls) => firstRoll === 10;
-  const isSpare = ([firstRoll, secondRoll] = rolls) => firstRoll !== 10 && firstRoll + secondRoll === 10;
-  const isLastFrameInGame = (index) => index === 9;
+module.exports = rolls => {
+  const isStrike = ([firstRoll] = rolls) => firstRoll === 10;
 
-  const groupByFrames = (rolls) => {
-    return rolls.reduce((frames, pins) => {
-      let frameIndex = frames.length - 1;
-      const rollsInFrame = frames[frameIndex];
-      let lastRollInFrame = rollsInFrame.length === 2;
+  const groupByFrames = rolls => rolls.reduce((framesAccumulator, roll) => {
+    const framesAccumulatorHead = framesAccumulator.length - 1;
+    const currentRolls = framesAccumulator[framesAccumulatorHead];
 
-      const isCurrentFrameFinished = !isLastFrameInGame(frameIndex) && (lastRollInFrame || isStryke(rollsInFrame));
+    const hasReachedMaxAttempts = currentRolls.length === 2;
+    const hasFrameFinished = hasReachedMaxAttempts || isStrike(currentRolls);
+    const isLastFrameInGame = framesAccumulatorHead === 9;
 
-      if (!isCurrentFrameFinished)
-        rollsInFrame.push(pins);
-      else
-        frames.push([pins]);
+    if (hasFrameFinished && !isLastFrameInGame)
+      framesAccumulator.push([roll]);
+    else
+      currentRolls.push(roll);
 
-      return frames;
-    }, [[]]);
-  };
+    return framesAccumulator;
+  }, [[]]);
 
-  const score = (frames) => {
-    const sumNextRolls = (amount, index) => {
-      return frames
-        .filter((f, frameIndex) => frameIndex > index)
-        .reduce((acc, f) => acc.concat(f))
-        .slice(0, amount)
-        .reduce((acc, r) => acc + r);
-    };
+  const calculateScore = frames => frames.map((currentRolls, frameIndex) => {
+    const isSpare = ([firstRoll, secondRoll] = currentRolls) => firstRoll + secondRoll === 10;
+    const sumNextRolls = (rollsAmount, currentFrameIndex) =>
+      frames
+        .filter((frame, index) => index > currentFrameIndex)
+        .reduce((rollsAccumulator, roll) => rollsAccumulator.concat(roll), [])
+        .slice(0, rollsAmount)
+        .reduce((total, roll) => total + roll, 0);
 
-    return frames.map((rolls, index) => {
-      let frameScore = rolls.reduce((acc, r) => acc + r);
+    let frameScore = currentRolls.reduce((total, roll) => total + roll);
+    frameScore += isStrike(currentRolls) ? sumNextRolls(2, frameIndex) : 0;
+    frameScore += isSpare(currentRolls) ? sumNextRolls(1, frameIndex) : 0;
 
-      if (!isLastFrameInGame(index)) {
-        frameScore += isStryke(rolls) ? sumNextRolls(2, index) : 0;
-        frameScore += isSpare(rolls) ? sumNextRolls(1, index) : 0;
-      }
+    return frameScore;
+  }).reduce((total, score) => total + score);
 
-      return frameScore;
-    }).reduce((acc, score) => acc + score);
-  };
-  return score(groupByFrames(rolls));
+  return calculateScore(groupByFrames(rolls));
 };
