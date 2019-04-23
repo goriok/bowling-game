@@ -10,11 +10,14 @@ module.exports = rolls => {
     const isLastFrameInGame = framesAccumulatorHead === 9;
 
     if (hasFrameFinished && !isLastFrameInGame)
-      framesAccumulator.push([roll]);
+      return framesAccumulator.concat([[roll]]);
     else
-      currentRolls.push(roll);
-
-    return framesAccumulator;
+      return framesAccumulator.map((rollAccumulator, index )=> {
+        if(index === framesAccumulatorHead){
+          return rollAccumulator.concat([roll]);
+        }
+        return rollAccumulator;
+      });
   }, [[]]);
 
   const calculateScore = frames => frames.map((currentRolls, frameIndex) => {
@@ -26,11 +29,11 @@ module.exports = rolls => {
         .slice(0, rollsAmount)
         .reduce((total, roll) => total + roll, 0);
 
-    let frameScore = currentRolls.reduce((total, roll) => total + roll);
-    frameScore += isStrike(currentRolls) ? sumNextRolls(2, frameIndex) : 0;
-    frameScore += isSpare(currentRolls) ? sumNextRolls(1, frameIndex) : 0;
+    const frameScore = currentRolls.reduce((total, roll) => total + roll);
+    const strikeScore = isStrike(currentRolls) ? sumNextRolls(2, frameIndex) : 0;
+    const spareScore = isSpare(currentRolls) ? sumNextRolls(1, frameIndex) : 0;
 
-    return frameScore;
+    return frameScore + strikeScore + spareScore;
   }).reduce((total, score) => total + score);
 
   return calculateScore(groupByFrames(rolls));
