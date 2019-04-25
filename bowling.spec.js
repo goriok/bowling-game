@@ -4,9 +4,8 @@ describe('to play a bowling game', () => {
   const strike = [10];
   const spare = [7, 3];
   const roll = (times, pins) => {
-    times--;
-    if (times > 0) {
-      return [pins].concat(roll(times, pins));
+    if (times > 1) {
+      return [pins].concat(roll(times - 1, pins));
     } else {
       return [pins];
     }
